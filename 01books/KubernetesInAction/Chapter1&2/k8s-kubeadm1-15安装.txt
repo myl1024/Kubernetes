@@ -1,0 +1,121 @@
+﻿ansible  一键自动化安装   https://github.com/easzlab/kubeasz
+kubeadm安装k8s:   google官方pull镜像
+
+kubeadm 安装k8s 1.15版:
+
+环境要求:
+所有节点：
+
+| 机器名     | ip地址     | cpu和内存要求  |
+| -----------| ---------  | -------------- |
+| k8s-master | 10.0.0.210 | 2c2g(关闭swap) |
+| k8s-node1  | 10.0.0.211 | 2c2g(关闭swap) |
+
+swapoff -a 
+vim /etc/fstab    永久关闭
+
+添加解析地址：主节点+所有节点
+10.0.0.210 k8s-master
+10.0.0.211 k8s-node1
+
+
+1:安装指定版本docker
+
+#所有节点
+curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+wget -O /etc/yum.repos.d/docker-ce.repo https://download.docker.com/linux/centos/docker-ce.repo
+sed -i 's+download.docker.com+mirrors.tuna.tsinghua.edu.cn/docker-ce+' /etc/yum.repos.d/docker-ce.repo
+yum list docker-ce --showduplicates
+
+yum install docker-ce-18.09.7 -y
+systemctl enable docker && systemctl srart docker
+
+#检查版本信息
+docker info
+
+
+2:安装kubelet
+
+#所有节点
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+
+yum install kubelet-1.15.0 kubeadm-1.15.0 kubectl-1.15.0 -y
+systemctl enable kubelet && systemctl start kubelet
+
+
+3:使用kubeadm初始化k8s集群
+
+#所有节点
+cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+sysctl  --system
+
+
+#[WARNING IsDockerSystemdCheck]: detected "cgroupfs" as the Docker cgroup driver
+出现[WARNING IsDockerSystemdCheck]，是由于docker的Cgroup Driver和kubelet的Cgroup Driver不一致导致的，
+此处选择修改docker的和kubelet一致
+
+vim /usr/lib/systemd/system/docker.service
+ExecStart=/usr/bin/dockerd --exec-opt native.cgroupdriver=systemd
+
+systemctl daemon-reload
+systemctl restart docker
+#检查
+[root@k8s-master ~]#  docker info | grep Cgroup
+ Cgroup Driver: systemd
+
+#控制节点
+kubeadm init --apiserver-advertise-address=10.0.0.210 --kubernetes-version=v1.15.0  --pod-network-cidr=172.18.0.0/16 --service-cidr=10.254.0.0/16 --image-repository registry.aliyuncs.com/google_containers
+              master地址                              指定版本                     指定pod网络的IP地址范围          为service VIPs使用不同的IP地址(默认“10.96.0.0/12”)    指定仓库
+#根据提示
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+4:给k8s集群加入node节点:
+
+#node节点
+按master上最后提示粘贴如下内容在node节点执行
+kubeadm join 10.0.0.210:6443 --token zsbzc1.u97vsij9n4htonj2 \
+    --discovery-token-ca-cert-hash sha256:922b595dbb79faa51e1358cffa109bb705394205748b59696f43588540249ab2 
+
+主节点上查看状态
+kubectl get nodes
+
+
+#kubeadm token --help   token默认24小时过期
+
+5:为k8s集群配置网络插件
+
+wget https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+修改128行pod的网段为172.18.0.0/16
+kubectl create -f kube-flannel.yml
+kubectl get all -n kube-system
+kubectl get nodes
+
+#给node节点打角色标签
+kubectl get nodes --show-labels
+kubectl label nodes k8s-node1 node-role.kubernetes.io/node=
+                    节点主机名
+kubectl get nodes
+
+报错：
+Container runtime network not ready: NetworkReady=false reason:NetworkPluginNotReady message:docker: network plugin is not ready: cni config uninitialized
+#查看日志
+journalctl -f -u kubelet
+#查看flannel镜像
+docker images|grep flannel
+#下载镜像很慢，耐心等待状态会变为运行
+
