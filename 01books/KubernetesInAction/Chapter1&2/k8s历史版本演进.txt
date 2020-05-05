@@ -1,0 +1,76 @@
+开始之前，发版代号你需要了解下：Alpha（内部测试版）->Beta（测试版）-> GA（正式发布的版本）
+
+v 1.10  2018年03月27日
+-------
+2018年第一个版本，此版本新增：容器存储接口（CSI）及持久本地卷进入Beta阶段；引入外部 kubectl 认证凭据程序（Alpha阶段）； CoreDNS进入Beta阶段。
+
+容器存储接口（CSI）进入Beta阶段：终于迎来进入Beta版本，使得第三方存储可以在Kubernetes核心代码之外独立开发自己的解决方案，接入卷插件变的更加简单。
+持久本地卷进入Beta阶段：本地存储管理也迈向Beta阶段，这意味着节点本地存储（非网络）可作为持久数据卷使用。
+引入外部kubectl 认证凭据程序，进入Alpha阶段：云服务提供商、厂商以及其他平台开发者现在能够发布二进制插件以处理特定云供应商IAM服务的身份验证，或者与不支持树形的内部身份验证系统（例如Active Directory）集成。
+CoreDNS进入beta版本：用于替代现在的KubeDNS。
+
+v 1.11  2018年06月28日
+------
+2018年第二个版本，此版本更新两项备有期待的功能，分别是：基于IPVS的集群内负载均衡和CoreDNS作为集群DNS的附加选项，这就意味着生产应用的网络性能、可扩展性都将得到提升。
+
+集群内负载均衡IPVS转正：基于IPVS的集群内服务负载均衡正式上线，进入GA版本。IPVS是内核级负载均衡，提供更丰富的调度算法，在大流量并发表现优秀，这一变化使得网络吞吐量更上一层楼，提供更低的延迟。目前IPVS还不是默认选项。
+集群内DNS服务CoreDNS转正：CoreDNS正式作为集群DNS附加选项。CoreDNS是一套灵活可扩展的DNS服务器，可直接与Kubernetes API集成，相比于原来KubeDNS，有更少组件提供服务，且允许用户创建自定义DNS记录。
+Kubelet动态配置进入Beta阶段：在此之前，kubelet配置需要在命令行标记，这就意味着修改kubelet配置必须重启服务。通过这项改进，用户可以将kubelet配置存储在集群中，通过API Server动态更新。
+
+v 1.12  2018年09月27日
+---- 
+2018年第三个版本，此版本新增：Kubelet TLS Bootstrap和Azure虚拟机规模集（VMSS）支持
+Kubelet证书轮换进入Beta阶段：在v1.4中，引入kubelet TLS Bootstrap，初衷是为了自动为kubelet签发客户端证书。这一功能可以在当前证书到期时自动续订密钥和kubelet API服务器的证书。
+Azure虚拟机规模集（VMSS）支持：Azure 虚拟机规模集（VMSS）允许您根据需求或设置的计划自动增加或减少的同类 VM 池。这使得可以轻松管理，扩展和负载平衡多个 VM，从而提供高可用性和应用程序弹性，非常适合可作为 Kubernetes 工作负载运行的大型应用程序。
+
+v 1.13 2018年12月04日
+------
+ 
+2018年第四个版本，此版本更新：kubeadm进入GA，容器存储接口（CSI）进入GA，CoreDNS成为默认DNS服务器
+
+kubeadm转正：kubeadm是一个可以管理集群生命周期的工具，从创建到配置再到升级，使得部署K8S集群变的很简单。现在正式成为GA版本，自动化部署迈出的重要一步。
+容器存储接口（CSI）转正：使得第三方存储可以在Kubernetes核心代码之外独立开发自己的解决方案，接入卷插件变的更加简单。现在正式成为GA版本。
+CoreDNS成为默认DNS服务器：在v1.11版本中，CoreDNS已达到一般可用性，现在替换KubeDNS为默认DNS服务器。
+
+
+v 1.14 2018年03月26日
+------ 
+2019年第一个版本，此版本更新：生产级支持Windows节点，kubectl全新文档与kustomize集成，持久本地卷进入GA
+
+生产级支持Windows节点：在这之前，Windows节点一直吃处于beta阶段，如今，Kubernetes 的Pod，Service，应用编排，CNI 网络等绝大多数核心能力都已经在 Windows 节点上得到了支持。开始正式支持将Windows节点添加为工作节点并部署容器，提供了Linux/Windows应用混合部署的统一管理能力，再一次印证了这次发布的可用度。
+kubectl全新文档：kubectl的文档已经从头开始重写，重点关注于使用声明性Resource Config来管理资源。该文档按照独立书籍格式，作为独立站点发布。
+文档网址：https://kubectl.docs.kubernetes.io
+kubectl集成kustomize：Kustomize 允许用户从一个基础 YAML 文件，通过 Overlay 的方式生成最终部署应用所需的 YAML 文件，而不是像 Helm 那样通过字符串替换的方式来直接修改基础 YAML 文件（模板）。这样，在一个用户通过 Overlay 生成新的 YAML 文件的同时，其他用户可以完全不受影响的使用任何一个基础 YAML 或者某一层生成出来的 YAML 。这使得每一个用户，都可以通过 fork/modify/rebase 这样 Git 风格的流程来管理海量的 YAML 文件。
+持久本地卷转正：允许用户将节点本地存储作为持久卷来源。持久化本地存储主要应用是数据库，本地存储与远程存储有着更好的性能，除了性能之外，本地存储通常也更便宜。
+
+v 1.15  2019年06月19日
+-----
+2019年第二个版本，此版本更新：核心API可扩展性，kubeadm高可用进入Beta，kubeadm无缝升级所有证书，持续改进CSI。
+
+核心Kubernetes API可扩展性：主要是CRD方面。
+kubeadm高可用（HA）进入Beta阶段：允许用户使用熟悉的kubeadm init和kubeadm join命令来配置和部署HA控制平面。
+kubeadm无缝升级所有证书：kubeadm现在可以在证书到期之前，无缝升级所有证书（升级时）。
+官网文档：https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-alpha
+持续改进容器存储接口（CSI）：继续致力于将内部的卷插件迁移到CSI。目前所有存储主要有两种接入方式：CSI和Flexvolume。
+
+
+v 1.16 2019年09月18日
+------ 
+2019年第三个版本，此版本更新：CRD进入GA，准入控制Webhooks进入GA，IPv4/IPv6双栈协议支持，CSI规范卷大小调整。
+
+CRD（Custom resources）：CRD 是对 Kubernetes 扩展的一种方式，用以服务于新的资源类型，自v1.7版本以来，CRD一直在Beta阶段。如今，CRD 正式成为GA版本。
+准入控制webhook：准入控制作为Kubernetes扩展机制，webhooks自1.9版本以来，一直在Beta阶段，如今，Admission webhook 也正式成为GA版本。
+IPv4/IPv6双栈协议支持：对Pod和Service的IPv4与IPv6地址的支持。
+CSI规范中支持调整卷大小：新版本有大量和 Volume 及 Volume 修改相关的增强。而 CSI 规范中对 Volume 调整的支持正在迁移至 Beta 阶段，使得任何卷插件都可以调整大小。
+
+v1.17
+-----
+添加IPv4 / IPv6双协议栈支持
+
+v1.18
+----
+EndpointSlice API
+将kubectl软件包代码移至暂存
+CertificateSigningRequest API
+扩展大页面功能
+客户端签名重构，以标准化选项和上下文处理
